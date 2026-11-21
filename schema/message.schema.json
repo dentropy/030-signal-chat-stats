@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/carderne/signal-export/message.schema.json",
+  "title": "sigexport Message",
+  "description": "One JSON object per line in sigexport's data.json (NDJSON). Field names follow Message.dict() in carderne/signal-export. Reactions are [name, emoji] pairs because Reaction is a namedtuple. sticker is null when the message has no sticker; a schema inferred from a single sticker-less message often types that field as null only. missing_kind is null when the file was copied, or a short string (\"media\", \"attachment\") when the attachment existed but was not exported.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "date",
+    "sender",
+    "body",
+    "quote",
+    "sticker",
+    "reactions",
+    "attachments",
+    "deleted",
+    "call",
+    "missed"
+  ],
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "datetime.isoformat(), naive local time from the Signal database."
+    },
+    "sender": {
+      "type": "string",
+      "description": "Display name. Outgoing messages use \"Me\"."
+    },
+    "body": {
+      "type": "string",
+      "description": "Message text. sigexport appends two spaces so Markdown keeps the line break. Call messages use a phrase like \"Incoming voice call (accepted, 3m 12s)\" or \"Missed video call\"."
+    },
+    "quote": {
+      "type": "string",
+      "description": "Empty when this is not a reply. Otherwise a Markdown blockquote: \"\\n\\n> quoted text\\n\\n\". Replies to media with no text use Photo, Video, Voice message, or Attachment."
+    },
+    "sticker": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "packId", "packKey", "emoji", "extension"],
+          "properties": {
+            "id": { "type": "string" },
+            "packId": { "type": "string" },
+            "packKey": { "type": "string" },
+            "emoji": { "type": "string" },
+            "extension": { "type": ["string", "null"] }
+          }
+        }
+      ]
+    },
+    "reactions": {
+      "type": "array",
+      "description": "Each item is [reactor name, emoji], in the order sigexport stored them.",
+      "items": {
+        "type": "array",
+        "prefixItems": [{ "type": "string" }, { "type": "string" }],
+        "minItems": 2,
+        "maxItems": 2,
+        "items": false
+      }
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "path", "missing_kind"],
+        "properties": {
+          "name": { "type": "string" },
+          "path": {
+            "type": "string",
+            "description": "Relative path. Spaces are percent-encoded (%20), matching Path substitution in sigexport."
+          },
+          "missing_kind": {
+            "type": ["string", "null"],
+            "description": "null if the file was exported. \"media\" or \"attachment\" if it was left out."
+          }
+        }
+      }
+    },
+    "deleted": { "type": "boolean" },
+    "call": { "type": "boolean" },
+    "missed": {
+      "type": "boolean",
+      "description": "True when a call was missed, unanswered, or declined."
+    }
+  }
+}
